@@ -212,6 +212,12 @@ PouchitisrnaCntGMask_Factor_vsd_df <- data.frame(assay(PouchitisrnaCntGMask_Fact
 PouchitisrnaCntGMask_Factor_vsd_df<-cbind(as.data.frame(Gencode_33_Selected_Genename_GMask),PouchitisrnaCntGMask_Factor_vsd_df)
 write.table(PouchitisrnaCntGMask_Factor_vsd_df, file="Filtered_Counts/PouchitisrnaCntGMask_Factor_vsd.txt", sep = "\t")
 
+#---------------------------------
+#-- Differentially Expressed Genes
+#---------------------------------
+Genenames<-Gencode_33_Selected_Genename_GMask
+PouchitisrnaCntGMask_Factor_diff <- results(PouchitisrnaCntGMask_Factor,contrast=c("prognosis", "Pouchitis", "Healthy"),filterFun=ihw)
+rownames(PouchitisrnaCntGMask_Factor_diff) <- Genenames
 
 #################################
 #---- Variance Partition Analysis
@@ -223,7 +229,7 @@ varPart_model <- fitExtractVarPartModel(PouchitisrnaCntGMask_Factor_vsd[,2:78], 
 dim(varPart_model)
 save(varPart_model, file="varPart_model.Rdata")
 load ("varPart_model.Rdata")
-rownames(varPart_model) = make.names(PouchitisrnaCntGMask_Factor_vsd$Gencode_33_Selected_Genename_GMask, unique=TRUE)
+rownames(varPart_model) = make.names(PouchitisrnaCntGMask_Factor_vsd_df$Gencode_33_Selected_Genename_GMask, unique=TRUE)
 varPart_model_df <- data.frame(varPart_model)
 write.table(varPart_model_df, file="varPart_model.txt", sep = "\t")
 #sort the terms of the model by average variance explained across all genes, so when we plot they will be sorted by overall importance:
@@ -254,7 +260,7 @@ rownames(sampleDistMatrix) <- rownames(sample_meta)
 colnames(sampleDistMatrix) <- rownames(sample_meta)
 colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
 
-jpeg("sample_Dist_vsd_heatmap.jpg", height = 7, width = 7, units = 'in', res = 600)
+jpeg("sample_Dist_vsd_heatmap.jpg", height = 7, width = 10, units = 'in', res = 600)
 thisheat <- pheatmap(sampleDistMatrix,
                      clustering_distance_rows=sampleDists,
                      clustering_distance_cols=sampleDists,
@@ -281,9 +287,13 @@ pcaR<- data.frame(pcaALL,sample_meta)
 
 #plot with sample labels
 library(ggrepel)
-jpeg("pca.jpg", height = 7, width = 7, units = 'in', res = 600)
-ggplot(pcaR, aes(PC1, PC2, color= prognosis)) + geom_point(alpha=0.6,stroke = 3)+
+jpeg("pca_seqmethod.jpg", height = 7, width = 7, units = 'in', res = 600)
+ggplot(pcaR, aes(PC1, PC2, color= prognosis, shape=LibraryLayout)) + geom_point(alpha=0.6,stroke = 3)+
   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
   ylab(paste0("PC2: ",percentVar[2],"% variance")) +
   coord_fixed()  +theme_bw()
 dev.off ()
+
+
+
+
