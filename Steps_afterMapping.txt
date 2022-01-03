@@ -1,0 +1,29 @@
+Compile counts STAR provides gene-level count files for each sample (ReadsPerGene files), and include three data columns:
+
+head -100 Single_end/SRR3493774SRP074739pass1/*Gene*
+head -100 Paired_end/SRR3493794SRP074739pass1/*Gene*
+
+
+See the STAR manual for details: the first data column present the counts if the library was not strand-specific, the second for sense strand-specific protocols, the third for antisense strand-specific protocols. In this experiment, we will use antisense for the RNA-Seq libraries (the total antisense counts are much more than the sense).
+
+Create a COUNTS folder to store all count files, and compile:
+
+mkdir COUNTS
+cp Single_end/*pass1/*PerGene* COUNTS
+cp Paired_end/*pass1/*PerGene* COUNTS
+
+cd COUNTS
+
+#clean filenames
+ls *tab|while read line ; do mv $line ${line/SRP074739pass1ReadsPerGene.out/} ; done
+
+#compile gene names and counts, dropping the first 4 header lines:
+ls SRR3493790.tab | head -1 | while read line; do cut -f 1 $line | awk 'NR>4{print}' > countsannot_GRCh38.primary.Selected.Geneid.txt; done
+
+ls *tab | while read line; do echo $line | cat $line | awk 'NR>4{print}' | cut -f 3 > ${line/tab/Sense\.tab} | cat $line | awk 'NR>4{print}' | cut -f 4 > ${line/tab/antisense\.tab}; done
+
+paste *antisense.tab > POUCHITISrna_antisense.All.cnt
+paste *Sense.tab > POUCHITISrna_sense.All.cnt
+
+ls *Sense.tab | sed 's/.Sense.tab//g' | tr -s " " "\n" | sed 's/_1//g' > POUCHITISrna_senseSamples.txt
+ls *antisense.tab | sed 's/.antisense.tab//g' | tr -s " " "\n" | sed 's/_1//g' > POUCHITISrna_antisenseSamples.txt

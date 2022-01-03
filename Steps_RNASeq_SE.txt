@@ -1,0 +1,98 @@
+#-- Download SRA files: visit https://sra-explorer.info; Paste your SRP074739 ID and see what it is showing. Select all, add to the collections, then check saved datasets to get links to download the data.
+
+echo '#!/bin/bash' > Download_SRR_new.sh
+echo 'cd ~/Pouchitis_project/Early_trancriptome_SRP074739' >> Download_SRR_new.sh
+#- Now paste the download links and run
+qsub -q 256gb.q -cwd -o $PWD -e $PWD -l mem_free=200G -pe mpich 12 Download_SRR_new.sh
+
+#-- This dataset has 16 Single end and 61 Paired end files. So needs to be processed Seperately. This tutorial is to process the Sigle End reads.
+
+mkdir Single_end
+mv *sapiens_RNA-Seq.fastq.gz Single_end/
+cd Single_end/
+rename.sh
+
+#-- Step1 - Convert Fastq to Fastafiles. We will let the aligner to drop low-quality ends. To do this semi-automatic (thinking of applying it later to bigger datasets), we first build a file called tofastatable.txt that will provide the list of files and the preffixes to name the new fasta files and the reads in those files.
+
+ls *gz > fastqfiles.txt
+ls *gz | cut -f 1 -d '.' | sed 's/_R1//g'  >libraryname.txt
+ls *gz | cut -f 1 -d '.' | sed 's/_R1//g' > preffix.txt
+paste fastqfiles.txt libraryname.txt preffix.txt > tofastatable.txt
+cat tofastatable.txt
+
+This file is now fed into an script called generatefastaFromFastaqz that wraps a very simple perl script called DCfastaqTofastaLibraryId.pl
+  
+cp /home/caserod/scripts/generatefastaFromFastaqz /home/sharmaa4/scripts
+cp /home/caserod/scripts/DCfastaqTofastaLibraryId.pl /home/sharmaa4/scripts
+cat /home/sharmaa4/scripts/generatefastaFromFastaqz
+
+This script reads tofastatable.txt one line at a time. It uses the first argument file as the input fastq file, the second library to name the reads inside the new fasta file, the third preffix to name the output fasta file. If we store both generatefastaFromFastaqz and DCfastaqTofastaLibraryId.pl in our $HOME/scripts/ folder, we can submit all input files to the cluster for conversion:
+
+cat tofastatable.txt | while read file library preffix ; do qsub -o $PWD -e $PWD -cwd  /home/sharmaa4/scripts/generatefastaFromFastaqz $file $library $preffix; done
+
+When done, we have fasta files for alignments. Move the original raw fastq files to a different folder for long-term storage and to avoid accidental deletion.
+ 
+mkdir FASTQ
+mv *q.gz FASTQ
+ls -l FASTQ
+ls -l *a.gz
+ls -ltrh
+
+#-- Remove all error and output files generated from the Script 
+rm generatefastaFromFastaqz.*
+
+#--- Step2: Alignment to Human Genome using STAR, multiple libraries in one Shot. For this we will use the Fasta files generated in the previous step.
+ 
+ls *fasta.gz > fastafiles.txt
+cat fastafiles.txt |sed 's/.fasta.gz//g' > targetdirectories.SRP074739.txt
+cat fastafiles.txt |while read line ; do mkdir ${line/.fasta\.gz/SRP074739pass1/} ; done
+ls -ltrh
+
+So for instance, for the library with fasta file SRR3493780.fasta.gz, we create the directory SRR3493780SRP074739pass1. Where SRP074739 is the Project ID.
+ 
+#- Requirement1: 
+/home/sharmaa4/TOOLS/STAR-2.7.8a 
+
+#- Requirement2:
+/home/sharmaa4/RNASEQ_MASTER/Hsapiens/GRC38/INDEXES/GRCh38.primary.33.basicselected.STAR2.7.3a/
+
+#-Requirement3:
+cat ParametersStranded.txt
+#Note: in order to build browser tracks for the UCSC browser later, it's better to use the default for the outWigNorm parameter (=RPM, see STAR manual) so that the bedgraph files *bg output by STAR are normalized. 
+
+#-Requirement4:
+cp /home/caserod/common/scripts/generatesendscriptSingleGTFParam .
+cp /home/caserod/common/scripts/processLaneSingleGTFParam .
+ 
+cat processLaneSingleGTFParam
+#- Change the path of STAR and your email address in this file
+ 
+echo '#!/bin/bash/' > sendSEpouchitis
+ ./generatesendscriptSingleGTFParam targetdirectories.SRP074739.txt SRP074739pass1 ParametersStranded.txt SEpouchitis /home/caserod/RNASEQ_MASTER/Hsapiens/GRC38/INDEXES/GRCh38.primary.33.basicselected.STAR2.7.3a/ /home/sharmaa4/Pouchitis_project/Early_trancriptome_SRP074739/Single_end/ mem_free=32G 8 >> sendSEpouchitis
+chmod a+x sendSEpouchitis
+ 
+. sendSEpouchitis
+
+#- Check Job Status 
+qstat -u sharmaa4
+
+Once all of the alignments are done, we can compile the alignment statistics in STAR's final.out files for all libraries in one single file, mappingstatsFirstpass.txt:
+
+#get the first column of one of the final.out files, store in temp2.txt
+grep "|" SRR3493775SRP074739pass1/*.final.out | cut -f 1 -d "|" | sed 's/^  *//g' | awk 'NR>3 {print}' > temp2.txt
+
+#list all final.out files and aggregate the data into temporary files, then paste with the annotation in temp2.txt to generate the statistics text file, *mappingstatsFirstpass.txt*
+touch tempprev.txt
+ls *pass1/*final.out | while read line ; do
+grep "|" $line | cut -f 2  > temp.txt
+paste tempprev.txt temp.txt > tempnew.txt
+mv tempnew.txt tempprev.txt
+done
+cut -f 2- tempprev.txt | awk 'NR>3 {print}'  > tempnew.txt
+mv tempnew.txt tempprev.txt
+paste temp2.txt tempprev.txt > mappingstatsFirstpass.txt
+
+#----------Preliminary count analysis
+
+
+
