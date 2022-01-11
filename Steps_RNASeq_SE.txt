@@ -1,3 +1,5 @@
+Author: Ashok K. Sharma
+
 #-- Download SRA files: visit https://sra-explorer.info; Paste your SRP074739 ID and see what it is showing. Select all, add to the collections, then check saved datasets to get links to download the data.
 
 echo '#!/bin/bash' > Download_SRR_new.sh
