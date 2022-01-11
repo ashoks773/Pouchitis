@@ -1,0 +1,10 @@
+#!/bin/bash
+
+cp $4 Parameters1.in
+
+echo '#!/bin/bash' > $5
+echo  "/home/sharmaa4/TOOLS/STAR-2.7.3a/bin/Linux_x86_64_static/STAR --runMode alignReads --runThreadN " $9 " --outFileNamePrefix " $3 " --outStd Log --genomeDir " $6 " --readFilesIn "$7$1 " "$7$2 " --parametersFiles Parameters1.in" >> $5
+
+chmod a+x $5
+qsub -q 256gb.q,all.q,matlab.q,sandbox.q -cwd -o $PWD -e $PWD -l $8 -pe mpich $9 ./$5
+

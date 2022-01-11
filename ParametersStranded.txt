@@ -1,0 +1,48 @@
+readFilesCommand zcat 
+readMatesLengthsIn NotEqual
+outReadsUnmapped Fastx
+outSAMmode Full
+#outSAMtype BAM Unsorted
+outSAMtype BAM SortedByCoordinate
+outSAMstrandField intronMotif
+outSAMattributes All
+outSAMunmapped None
+outSAMorder Paired
+outSAMprimaryFlag AllBestScore
+outSJfilterReads All
+outSJfilterCountUniqueMin 1 1 1 1 
+outSJfilterCountTotalMin 1 1 1 1 
+outSJfilterOverhangMin 30 10 10 10 
+outSJfilterDistToOtherSJmin 10 0 5 10 
+outSJfilterIntronMaxVsReadN 50000 100000 200000 
+outFilterType Normal
+outFilterMultimapNmax 20
+outFilterMultimapScoreRange 1
+outFilterScoreMin 0
+outFilterScoreMinOverLread 0.66
+outFilterMatchNmin 0
+outFilterMatchNminOverLread 0.75
+outFilterMismatchNmax 999
+outFilterMismatchNoverLmax 0.1
+outFilterIntronMotifs None
+scoreGap 0
+scoreGapNoncan -200
+scoreGapGCAG 0
+scoreGapATAC 0
+scoreStitchSJshift 0
+alignIntronMin 21
+alignIntronMax 100000
+alignMatesGapMax 100000
+alignSJoverhangMin 10
+alignSJDBoverhangMin 1
+alignSplicedMateMapLmin 0
+alignSplicedMateMapLminOverLmate 0.66
+sjdbScore 2
+scoreGenomicLengthLog2scale -0.25
+quantMode GeneCounts
+#readNameSeparator -
+outWigType bedGraph
+outWigStrand Stranded
+#outWigNorm None
+outWigNorm RPM
+alignSoftClipAtReferenceEnds No
